@@ -1,5 +1,6 @@
-const bespoke = require('bespoke'),
-  markdown = require('../../lib/bespoke-markdownit.js');
+import bespoke from 'bespoke';
+import markdown from '../../lib/bespoke-markdownit.js';
+
 const FIXTURES_PATH = 'base/test/fixtures/';
 
 describe('bespoke-markdownit', function() {

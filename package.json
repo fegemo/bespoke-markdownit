@@ -11,6 +11,10 @@
   },
   "contributors": [],
   "main": "./lib/bespoke-markdownit.js",
+  "exports": {
+    ".": "./lib/bespoke-markdownit.js",
+    "./nohljs": "./lib/bespoke-markdownit.nohljs.js"
+  },
   "type": "module",
   "repository": {
     "type": "git",
@@ -31,6 +35,7 @@
     "bespoke-touch": "^1.0.0",
     "browserify": "^17.0.1",
     "del": "^8.0.1",
+    "esmify": "^2.1.1",
     "gh-pages": "^6.3.0",
     "gulp": "^5.0.1",
     "gulp-connect": "^5.7.0",

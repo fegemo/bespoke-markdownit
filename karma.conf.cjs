@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const esmify = require('esmify');
 
 process.env.CHROME_BIN = puppeteer.executablePath();
 
@@ -7,6 +8,10 @@ module.exports = function(config) {
     basePath: '',
 
     frameworks: ['jasmine', 'browserify'],
+
+    browserify: {
+      plugin: [esmify]
+    },
 
     files: [
       {

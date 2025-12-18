@@ -11,6 +11,7 @@ import source from 'vinyl-source-stream';
 import { deleteAsync as del } from 'del';
 import ghpages from 'gh-pages';
 import browserify from 'browserify';
+import esmify from 'esmify';
 
 import karmaPkg from 'karma';
 const { config: karmaConfig, Server: KarmaServer } = karmaPkg;
@@ -50,6 +51,7 @@ function coverageReport() {
 function compile() {
   return browserify({ debug: true, standalone: 'bespoke.plugins.markdownIt' })
     .add('./lib/bespoke-markdownit.js')
+    .plugin(esmify)
     .bundle()
     .pipe(source('bespoke-markdownit.js'))
     .pipe(buffer())
@@ -79,6 +81,7 @@ function compile() {
 function compileNoHljs() {
   return browserify({ debug: true, standalone: 'bespoke.plugins.markdownIt' })
     .add('./lib/bespoke-markdownit-nohljs.js')
+    .plugin(esmify)
     .bundle()
     .pipe(source('bespoke-markdownit-nohljs.js'))
     .pipe(buffer())
@@ -108,6 +111,7 @@ function compileNoHljs() {
 function compileDemo() {
   return browserify({ debug: true })
     .add('demo/demo.js')
+    .plugin(esmify)
     .bundle()
     .pipe(source('demo.bundled.js'))
     .pipe(dest('demo'))
