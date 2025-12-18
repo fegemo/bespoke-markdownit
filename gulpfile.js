@@ -76,6 +76,35 @@ function compile() {
     .pipe(connect.reload());
 }
 
+function compileNoHljs() {
+  return browserify({ debug: true, standalone: 'bespoke.plugins.markdownIt' })
+    .add('./lib/bespoke-markdownit-nohljs.js')
+    .bundle()
+    .pipe(source('bespoke-markdownit-nohljs.js'))
+    .pipe(buffer())
+    .pipe(header([
+      '/*!',
+      ' * <%= name %> v<%= version %> (no highlight.js)',
+      ' *',
+      ' * Copyright <%= new Date().getFullYear() %>, <%= author.name %>',
+      ' * This content is released under the <%= license %> license',
+      ' */\n\n'
+    ].join('\n'), pkg))
+    .pipe(dest('dist'))
+    .pipe(rename('bespoke-markdownit-nohljs.min.js'))
+    .pipe(terser({
+      ecma: 8,
+      compress: {
+        unsafe: true,
+        arguments: true,
+        drop_console: true
+      }
+    }))
+    .pipe(header(['/*! <%= name %> v<%= version %> ', '© <%= new Date().getFullYear() %> <%= author.name %>, ', '<%= license %> License */\n'].join(''), pkg))
+    .pipe(dest('dist'))
+    .pipe(connect.reload());
+}
+
 function compileDemo() {
   return browserify({ debug: true })
     .add('demo/demo.js')
@@ -103,7 +132,7 @@ function deploy(cb) {
 }
 
 export const test = series(lint, testFn);
-export const build = series(lint, compile);
-export const dev = series(parallel(compile, compileDemo), devFn);
+export const build = series(lint, parallel(compile, compileNoHljs));
+export const dev = series(parallel(compile, compileNoHljs, compileDemo), devFn);
 export const coveralls = series(test, coverageReport);
-export { clean, lint, compile, compileDemo, deploy };
+export { clean, lint, compile, compileNoHljs, compileDemo, deploy };
