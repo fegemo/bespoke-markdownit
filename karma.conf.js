@@ -39,9 +39,16 @@ module.exports = function(config) {
 
     logLevel: config.LOG_INFO,
 
-    autoWatch: true,
+    autoWatch: false,
 
-    browsers: ['ChromeHeadless'],
+    customLaunchers: {
+      ChromeHeadlessNoSandbox: {
+        base: 'ChromeHeadless',
+        flags: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+      }
+    },
+
+    browsers: ['ChromeHeadlessNoSandbox'],
 
     singleRun: true
   });
