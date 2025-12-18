@@ -1,49 +1,50 @@
-const { src, dest, series, parallel, watch } = require('gulp'),
-  terser = require('gulp-terser'),
-  header = require('gulp-header'),
-  rename = require('gulp-rename'),
-  eslint = require('gulp-eslint'),
-  buffer = require('vinyl-buffer'),
-  connect = require('gulp-connect'),
-  coveralls = require('@kollavarsham/gulp-coveralls'),
-  source = require('vinyl-source-stream');
+import { src, dest, series, parallel, watch } from 'gulp';
+import terser from 'gulp-terser';
+import header from 'gulp-header';
+import rename from 'gulp-rename';
+import eslint from 'gulp-eslint-new';
+import buffer from 'vinyl-buffer';
+import connect from 'gulp-connect';
+import coverallsPlugin from '@kollavarsham/gulp-coveralls';
+import source from 'vinyl-source-stream';
 
-const del = require('delete'),
-  ghpages = require('gh-pages'),
-  browserify = require('browserify');
+import { deleteAsync as del } from 'del';
+import ghpages from 'gh-pages';
+import browserify from 'browserify';
 
-const karma = require('karma');
+import karmaPkg from 'karma';
+const { config: karmaConfig, Server: KarmaServer } = karmaPkg;
+import path from 'path';
+import { readFileSync } from 'fs';
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url)));
 
-const path = require('path');
-const pkg = require('./package.json');
-
-function clean(done) {
-  return del(['dist', 'test/coverage'], done);
+async function clean() {
+  return del(['dist', 'test/coverage']);
 }
 
 function lint() {
-  return src(['gulpfile.js', 'lib/**/*.js', 'specs/**/*.js']).pipe(
-    eslint.failAfterError()
-  );
+  return src(['gulpfile.js', 'lib/**/*.js', 'test/spec/**/*.js'])
+    .pipe(eslint())
+    .pipe(eslint.failAfterError());
 }
 
-function test(done) {
-  const parseConfig = karma.config.parseConfig;
-  const Server = karma.Server;
-  parseConfig(
-    path.resolve('karma.conf.js'),
-    null,
-    { promiseConfig: true, throwErrors: true }
-  ).then(karmaConfig => {
-    const server = new Server(karmaConfig, exitCode => {
-      done();
+async function testFn() {
+  const parseConfig = karmaConfig.parseConfig;
+  const karmaCfg = await parseConfig(path.resolve('karma.conf.cjs'), null, {
+    promiseConfig: true,
+    throwErrors: true
+  });
+
+  await new Promise((resolve, reject) => {
+    const server = new KarmaServer(karmaCfg, exitCode => {
+      resolve();
     });
     server.start();
   });
 }
 
 function coverageReport() {
-  return src(['test/coverage/**/lcov.info']).pipe(coveralls());
+  return src(['test/coverage/**/lcov.info']).pipe(coverallsPlugin());
 }
 
 function compile() {
@@ -52,41 +53,25 @@ function compile() {
     .bundle()
     .pipe(source('bespoke-markdownit.js'))
     .pipe(buffer())
-    .pipe(
-      header(
-        [
-          '/*!',
-          ' * <%= name %> v<%= version %>',
-          ' *',
-          ' * Copyright <%= new Date().getFullYear() %>, <%= author.name %>',
-          ' * This content is released under the <%= license %> license',
-          ' */\n\n'
-        ].join('\n'),
-        pkg
-      )
-    )
+    .pipe(header([
+      '/*!',
+      ' * <%= name %> v<%= version %>',
+      ' *',
+      ' * Copyright <%= new Date().getFullYear() %>, <%= author.name %>',
+      ' * This content is released under the <%= license %> license',
+      ' */\n\n'
+    ].join('\n'), pkg))
     .pipe(dest('dist'))
     .pipe(rename('bespoke-markdownit.min.js'))
-    .pipe(
-      terser({
-        ecma: 8,
-        compress: {
-          unsafe: true,
-          arguments: true,
-          drop_console: true
-        }
-      })
-    )
-    .pipe(
-      header(
-        [
-          '/*! <%= name %> v<%= version %> ',
-          '© <%= new Date().getFullYear() %> <%= author.name %>, ',
-          '<%= license %> License */\n'
-        ].join(''),
-        pkg
-      )
-    )
+    .pipe(terser({
+      ecma: 8,
+      compress: {
+        unsafe: true,
+        arguments: true,
+        drop_console: true
+      }
+    }))
+    .pipe(header(['/*! <%= name %> v<%= version %> ', '© <%= new Date().getFullYear() %> <%= author.name %>, ', '<%= license %> License */\n'].join(''), pkg))
     .pipe(dest('dist'))
     .pipe(connect.reload());
 }
@@ -100,7 +85,7 @@ function compileDemo() {
     .pipe(connect.reload());
 }
 
-function dev() {
+function devFn() {
   const port = 8085;
 
   watch('lib/**/*.js', series(lint, compile, test));
@@ -114,13 +99,11 @@ function dev() {
 }
 
 function deploy(cb) {
-  ghpages.publish(path.join(__dirname, 'demo'), cb);
+  ghpages.publish(path.join(process.cwd(), 'demo'), cb);
 }
 
-exports.clean = clean;
-exports.lint = lint;
-exports.compile = series(lint, compile);
-exports.test = series(lint, test);
-exports.dev = series(parallel(compile, compileDemo), dev);
-exports.coveralls = series(exports.test, coverageReport);
-exports.deploy = deploy;
+export const test = series(lint, testFn);
+export const build = series(lint, compile);
+export const dev = series(parallel(compile, compileDemo), devFn);
+export const coveralls = series(test, coverageReport);
+export { clean, lint, compile, compileDemo, deploy };
