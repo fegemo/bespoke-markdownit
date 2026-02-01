@@ -16,8 +16,10 @@ import esmify from 'esmify';
 import karmaPkg from 'karma';
 const { config: karmaConfig, Server: KarmaServer } = karmaPkg;
 import path from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, promises as fs } from 'fs';
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url)));
+
+import { generateMapping } from './tool/map-aliases-to-hljsfiles.js';
 
 async function clean() {
   return del(['dist', 'test/coverage']);
@@ -26,6 +28,7 @@ async function clean() {
 function lint() {
   return src(['gulpfile.js', 'lib/**/*.js', 'test/spec/**/*.js'])
     .pipe(eslint())
+    .pipe(eslint.format())
     .pipe(eslint.failAfterError());
 }
 
@@ -57,7 +60,7 @@ function compile() {
     .pipe(buffer())
     .pipe(header([
       '/*!',
-      ' * <%= name %> v<%= version %>',
+      ' * <%= name %> v<%= version %> (with highlight.js with all languages supported)',
       ' *',
       ' * Copyright <%= new Date().getFullYear() %>, <%= author.name %>',
       ' * This content is released under the <%= license %> license',
@@ -80,10 +83,10 @@ function compile() {
 
 function compileNoHljs() {
   return browserify({ debug: true, standalone: 'bespoke.plugins.markdownIt' })
-    .add('./lib/bespoke-markdownit-nohljs.js')
+    .add('./lib/bespoke-markdownit-no-hljs.js')
     .plugin(esmify)
     .bundle()
-    .pipe(source('bespoke-markdownit-nohljs.js'))
+    .pipe(source('bespoke-markdownit-no-hljs.js'))
     .pipe(buffer())
     .pipe(header([
       '/*!',
@@ -94,7 +97,37 @@ function compileNoHljs() {
       ' */\n\n'
     ].join('\n'), pkg))
     .pipe(dest('dist'))
-    .pipe(rename('bespoke-markdownit-nohljs.min.js'))
+    .pipe(rename('bespoke-markdownit-no-hljs.min.js'))
+    .pipe(terser({
+      ecma: 8,
+      compress: {
+        unsafe: true,
+        arguments: true,
+        drop_console: true
+      }
+    }))
+    .pipe(header(['/*! <%= name %> v<%= version %> ', '© <%= new Date().getFullYear() %> <%= author.name %>, ', '<%= license %> License */\n'].join(''), pkg))
+    .pipe(dest('dist'))
+    .pipe(connect.reload());
+}
+
+function compileLazyHljs() {
+  return browserify({ debug: true, standalone: 'bespoke.plugins.markdownIt' })
+    .add('./lib/bespoke-markdownit-lazy-hljs.js')
+    .plugin(esmify)
+    .bundle()
+    .pipe(source('bespoke-markdownit-lazy-hljs.js'))
+    .pipe(buffer())
+    .pipe(header([
+      '/*!',
+      ' * <%= name %> v<%= version %> (lazily load languages with highlight.js)',
+      ' *',
+      ' * Copyright <%= new Date().getFullYear() %>, <%= author.name %>',
+      ' * This content is released under the <%= license %> license',
+      ' */\n\n'
+    ].join('\n'), pkg))
+    .pipe(dest('dist'))
+    .pipe(rename('bespoke-markdownit-lazy-hljs.min.js'))
     .pipe(terser({
       ecma: 8,
       compress: {
@@ -121,11 +154,11 @@ function compileDemo() {
 function devFn() {
   const port = 8085;
 
-  watch('lib/**/*.js', series(lint, compile, test));
+  watch('lib/**/*.js', series(lint, compile, compileNoHljs, compileLazyHljs, compileDemo, test));
   watch('test/spec/**/*.js', test);
 
   connect.server({
-    root: 'demo',
+    root: ['demo', 'lib'],
     livereload: true,
     port
   });
@@ -135,8 +168,17 @@ function deploy(cb) {
   ghpages.publish(path.join(process.cwd(), 'demo'), cb);
 }
 
+async function aliasMap() {
+  const mapping = await generateMapping();
+  await fs.mkdir('data', { recursive: true });
+  await fs.writeFile(
+    'data/hljs-alias-to-file.json',
+    JSON.stringify(mapping, null, 2)
+  );
+}
+
 export const test = series(lint, testFn);
-export const build = series(lint, parallel(compile, compileNoHljs));
-export const dev = series(parallel(compile, compileNoHljs, compileDemo), devFn);
+export const build = series(lint, parallel(aliasMap, compile, compileNoHljs, compileLazyHljs));
+export const dev = series(parallel(aliasMap, compile, compileNoHljs, compileLazyHljs, compileDemo), devFn);
 export const coveralls = series(test, coverageReport);
-export { clean, lint, compile, compileNoHljs, compileDemo, deploy };
+export { clean, lint, compile, compileNoHljs, compileLazyHljs, compileDemo, deploy, aliasMap };

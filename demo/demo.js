@@ -1,10 +1,10 @@
-const bespoke = require('bespoke'),
-  keys = require('bespoke-keys'),
-  touch = require('bespoke-touch'),
-  markdownIt = require('../dist/bespoke-markdownit.min.js'),
-  defList = require('markdown-it-deflist'),
-  classes = require('bespoke-classes'),
-  progress = require('bespoke-progress');
+import bespoke from 'bespoke';
+import keys from 'bespoke-keys';
+import touch from 'bespoke-touch';
+import markdownIt from '../lib/bespoke-markdownit-lazy-hljs.js';
+import defList from 'markdown-it-deflist';
+import classes from 'bespoke-classes';
+import progress from 'bespoke-progress';
 
 bespoke.from('article', [
   keys(),

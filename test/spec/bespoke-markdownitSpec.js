@@ -1,5 +1,5 @@
 import bespoke from 'bespoke';
-import markdown from '../../lib/bespoke-markdownit.js';
+import markdown from '../../lib/bespoke-markdownit-lazy-hljs.js';
 
 const FIXTURES_PATH = 'base/test/fixtures/';
 
