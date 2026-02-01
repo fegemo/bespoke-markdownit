@@ -35,6 +35,7 @@
     "bespoke-touch": "^1.0.0",
     "browserify": "^17.0.1",
     "del": "^8.0.1",
+    "eslint": "^9.39.2",
     "esmify": "^2.1.1",
     "gh-pages": "^6.3.0",
     "gulp": "^5.0.1",
