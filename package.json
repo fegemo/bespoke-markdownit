@@ -1,6 +1,6 @@
 {
   "name": "bespoke-markdownit",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Allows using Markdown for bespoke.js presentation slides by leveraging markdown-it",
   "homepage": "https://github.com/fegemo/bespoke-markdownit",
   "bugs": "https://github.com/fegemo/bespoke-markdownit/issues",

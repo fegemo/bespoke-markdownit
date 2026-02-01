@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/fegemo/bespoke-markdownit.svg?branch=master)](https://travis-ci.org/fegemo/bespoke-markdownit) [![Coverage Status](https://coveralls.io/repos/github/fegemo/bespoke-markdownit/badge.svg?branch=master)](https://coveralls.io/github/fegemo/bespoke-markdownit?branch=master)
+[![Node.js CI](https://github.com/fegemo/bespoke-markdownit/actions/workflows/node.js.yml/badge.svg)](https://github.com/fegemo/bespoke-markdownit/actions/workflows/node.js.yml) [![Coverage Status](https://coveralls.io/repos/github/fegemo/bespoke-markdownit/badge.svg?branch=master)](https://coveralls.io/github/fegemo/bespoke-markdownit?branch=master)
 
 # bespoke-markdownit
 
@@ -36,6 +36,9 @@ For example, when using CommonJS modules:
 ```js
 const bespoke = require('bespoke'),
   markdown = require('bespoke-markdownit');
+  // optionally: 
+  // 1. require('bespoke-markdownit/lazy-hljs') to lazily load Highlight.js grammars
+  // 2. require('bespoke-markdownit/no-hljs) to not perform any syntax highlighting
 
 bespoke.from('#presentation', [
   markdown()
@@ -52,14 +55,15 @@ bespoke.from('#presentation', [
 
 #### Plugin Options
 
-The plugin builder accepts up to 2 parameters for configuration.
+The plugin builder accepts up to 3 parameters for configuration.
 The first allows the **definition of metadata for each slide**. That data can
 be used by callbacks provided to the plugin builder function. The second
 parameter allows **passing plugins to the markdown-it** parser. There are
 various [markdown-it plugins][plugins], such as one to extend the Markdown
-syntax to allow `<abbr></abbr>` ([markdown-it-abbr][plugin-abbr]).
+syntax to allow `<abbr></abbr>` ([markdown-it-abbr][plugin-abbr]). The third
+is an object with higlight.js configuration.
 
-Let us see how to use both parameters.
+Let us see how to use those parameters.
 
 ##### 1st parameter: Slide metadata
 
@@ -197,6 +201,26 @@ bespoke.from('#presentation',
 
 The order in which they are passed to the bespoke-markdownit builder is the
 same that it passes along to markdown-it.
+
+##### 3rd parameter: Highlight.js option
+
+The third parameter is an optional object with configurations for higlight.js.
+It has the form:
+
+```js
+const hljsConfig = {
+  languagesPath: '...'
+}
+```
+
+If `hljsConfig.languagesPath` is provided, it is used internally as a prepend path
+for lazily-loading Highlight.js grammars instead of including all of them at once.
+It should point to a URL which contains a .min.js file for each supported grammar
+in highlight.js, such a URL of the highlight.js assets hosted from a CDN¹ or a
+local path where this plugin can dynamically import it using ES6 Modules.
+
+¹The default behavior is to dynamically import lazily-loaded grammars from the
+CDN: https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/languages/
 
 ### 2. Stylesheet for code highlighting
 
