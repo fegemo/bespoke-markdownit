@@ -7,7 +7,7 @@
   "author": {
     "name": "Flávio Coutinho",
     "url": "https://github.com/fegemo",
-    "email": "fegemo@gmail.com.com"
+    "email": "fegemo@gmail.com"
   },
   "contributors": [],
   "main": "./lib/bespoke-markdownit.js",
